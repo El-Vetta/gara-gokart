@@ -10,21 +10,19 @@
     }
 
     html, body {
-      height: 100vh;
-      width: 100vw;
       margin: 0;
       padding: 8px;
       background: #121212; 
       color: white; 
       font-family: sans-serif; 
       text-align: center; 
-      overflow: hidden; /* Blocca definitivamente lo scroll sia su PC che su Mobile */
     }
 
     body {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-height: 100vh;
     }
     
     h1 {
@@ -45,6 +43,9 @@
       gap: 6px; 
       align-items: center;
       flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .playback-controls { 
@@ -59,7 +60,7 @@
       background: #2563eb; 
       color: white; 
       border: none; 
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 6px; 
       cursor: pointer; 
       font-size: 12px; 
@@ -80,30 +81,22 @@
       white-space: nowrap;
     }
 
-    /* Layout Griglia Desktop: 3 colonne x 2 righe */
+    /* Layout Griglia Desktop */
     .grid { 
       display: grid; 
       grid-template-columns: repeat(3, 1fr); 
-      grid-template-rows: repeat(2, 1fr);
       gap: 8px; 
       width: 100%; 
       flex: 1;
-      min-height: 0;
     }
 
     /* Modalità ingrandita */
-    .grid.has-featured {
-      display: flex;
-      flex: 1;
-      width: 100%;
-      height: 100%;
-    }
-
     .grid.has-featured .card:not(.featured) {
       display: none !important;
     }
 
     .grid.has-featured .card.featured {
+      grid-column: 1 / -1;
       width: 100%;
       height: 100%;
       margin: 0;
@@ -121,35 +114,47 @@
       cursor: pointer; 
       user-select: none;
       transition: all 0.3s ease;
-      min-height: 0;
     }
     .card.audio-on { border-color: #00ff88; }
 
     .video-wrapper {
-      flex: 1;
       width: 100%;
-      min-height: 0;
-      background: #000;
       position: relative;
+      padding-top: 56.25%; /* Ratio 16:9 fisso */
+      background: #000;
     }
 
-    iframe {
+    iframe, .poster-img {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      object-fit: cover;
+    }
+
+    iframe {
+      pointer-events: none;
+    }
+
+    .poster-img {
+      z-index: 2;
+      transition: opacity 0.3s ease;
+    }
+
+    .poster-img.hidden {
+      opacity: 0;
       pointer-events: none;
     }
 
     .card-footer {
-      padding: 4px;
+      padding: 6px;
       background: #1e1e1e;
       flex-shrink: 0;
     }
 
-    p { margin: 1px 0 3px 0; font-size: 11px; font-weight: bold; }
+    p { margin: 1px 0 4px 0; font-size: 11px; font-weight: bold; }
     
     .card-actions { display: flex; justify-content: center; gap: 6px; }
 
@@ -157,30 +162,26 @@
       background: #333; 
       color: white; 
       border: 1px solid #555; 
-      padding: 3px 6px;
+      padding: 4px 8px;
       border-radius: 4px; 
       cursor: pointer; 
-      font-size: 10px; 
+      font-size: 11px; 
       transition: 0.2s;
     }
     .card.audio-on .btn-single { background: #00ff88; color: black; font-weight: bold; }
     .btn-focus { background: #2563eb; font-weight: bold; }
 
-    /* Layout Mobile Smartphone: 2 colonne x 3 righe per vedere tutti i video senza scroll */
-    @media (max-width: 600px) {
-      h1 { font-size: 0.95rem; }
-      .controls-container { padding: 4px 6px; }
-      .btn-control { padding: 4px 8px; font-size: 10px; }
-      .time-display { font-size: 9px; }
-      
+    /* Ottimizzazione Smartphone Mobile */
+    @media (max-width: 768px) {
+      body {
+        overflow-y: auto; /* Permette lo scroll fluido su telefoni in verticale */
+      }
       .grid { 
         grid-template-columns: repeat(2, 1fr); 
-        grid-template-rows: repeat(3, 1fr);
         gap: 6px; 
       }
-
-      p { font-size: 10px; margin: 1px 0; }
-      .btn-single, .btn-focus { padding: 2px 4px; font-size: 9px; }
+      h1 { font-size: 1rem; }
+      .btn-control { padding: 5px 10px; font-size: 11px; }
     }
   </style>
 </head>
@@ -201,6 +202,7 @@
   <div class="grid">
     <div class="card audio-on" id="card-0" onclick="toggleAudio(0, event)">
       <div class="video-wrapper">
+        <img id="poster-0" class="poster-img" src="https://img.youtube.com/vi/ctNbkpWVy4g/hqdefault.jpg" alt="Preview Pilota 1">
         <div id="v0"></div>
       </div>
       <div class="card-footer">
@@ -214,6 +216,7 @@
 
     <div class="card audio-on" id="card-1" onclick="toggleAudio(1, event)">
       <div class="video-wrapper">
+        <img id="poster-1" class="poster-img hidden" src="" alt="Preview Pilota 2">
         <div id="v1"></div>
       </div>
       <div class="card-footer">
@@ -227,6 +230,7 @@
 
     <div class="card audio-on" id="card-2" onclick="toggleAudio(2, event)">
       <div class="video-wrapper">
+        <img id="poster-2" class="poster-img" src="https://img.youtube.com/vi/FNPA_kQMaD0/hqdefault.jpg" alt="Preview Pilota 3">
         <div id="v2"></div>
       </div>
       <div class="card-footer">
@@ -240,12 +244,13 @@
 
     <div class="card audio-on" id="card-3" onclick="toggleAudio(3, event)">
       <div class="video-wrapper">
+        <img id="poster-3" class="poster-img" src="https://img.youtube.com/vi/6SaxWshz-Hg/hqdefault.jpg" alt="Preview Pilota 4">
         <div id="v3"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 4</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
+          <button class="btn-single">🔊 Audio Off</button>
           <button class="btn-focus" onclick="toggleFocus(3, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -253,6 +258,7 @@
 
     <div class="card audio-on" id="card-4" onclick="toggleAudio(4, event)">
       <div class="video-wrapper">
+        <img id="poster-4" class="poster-img" src="https://img.youtube.com/vi/8eQmVKUpvYU/hqdefault.jpg" alt="Preview Pilota 5">
         <div id="v4"></div>
       </div>
       <div class="card-footer">
@@ -269,7 +275,7 @@
   <script>
     const youtubeIDs = [
       'ctNbkpWVy4g',
-      '', // ID del Pilota 2 appena disponibile
+      '', 
       'FNPA_kQMaD0',
       '6SaxWshz-Hg',
       '8eQmVKUpvYU'
@@ -307,18 +313,11 @@
 
     function onPlayerReady(event, index) {
       const p = event.target;
-      p.mute(); // Muto iniziale obbligatorio per l'Autoplay Policy dei browser
-
-      p.playVideo();
-      setTimeout(() => {
-        p.pauseVideo();
-        p.seekTo(0, true);
-        
-        if (typeof p.getDuration === 'function') {
-          const d = p.getDuration();
-          if (d > maxDuration) maxDuration = d;
-        }
-      }, 300);
+      p.mute();
+      if (typeof p.getDuration === 'function') {
+        const d = p.getDuration();
+        if (d > maxDuration) maxDuration = d;
+      }
     }
 
     setInterval(() => {
@@ -331,8 +330,16 @@
       }
     }, 100);
 
+    function hideAllPosters() {
+      document.querySelectorAll('.poster-img').forEach(img => img.classList.add('hidden'));
+    }
+
     function togglePlayPause() {
       isPlaying = !isPlaying;
+
+      if (isPlaying) {
+        hideAllPosters(); // Rimuove le copertine per mostrare i video in riproduzione
+      }
 
       const activePlayer = players.find(p => p && typeof p.getCurrentTime === 'function');
       const refTime = activePlayer ? activePlayer.getCurrentTime() : 0;
@@ -341,8 +348,6 @@
         if (p && p.playVideo) {
           if (isPlaying) {
             p.seekTo(refTime, true);
-            
-            // Se la card ha l'audio attivo (classe audio-on), riattiva l'audio dell'utente al click
             const card = document.getElementById(`card-${idx}`);
             if (card && card.classList.contains('audio-on')) {
               p.unMute();
