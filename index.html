@@ -11,6 +11,7 @@
 
     html, body {
       height: 100vh;
+      height: 100dvh; /* Considera le barre dinamiche del browser su mobile */
       width: 100vw;
       margin: 0;
       padding: 4px;
@@ -29,7 +30,7 @@
     
     h1 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.95rem;
       flex-shrink: 0;
     }
 
@@ -37,12 +38,12 @@
       background: #1e1e1e; 
       border: 1px solid #333; 
       border-radius: 6px;
-      padding: 4px 8px; 
+      padding: 3px 6px; 
       width: 100%; 
       margin: 0 auto;
       display: flex; 
       flex-direction: column; 
-      gap: 4px; 
+      gap: 3px; 
       align-items: center;
       flex-shrink: 0;
     }
@@ -50,7 +51,7 @@
     .playback-controls { 
       display: flex; 
       align-items: center; 
-      gap: 8px; 
+      gap: 6px; 
       width: 100%; 
       justify-content: center; 
     }
@@ -59,7 +60,7 @@
       background: #2563eb; 
       color: white; 
       border: none; 
-      padding: 4px 10px;
+      padding: 4px 8px;
       border-radius: 4px; 
       cursor: pointer; 
       font-size: 11px; 
@@ -71,7 +72,7 @@
 
     .time-slider { 
       flex: 1; 
-      max-width: 400px;
+      max-width: 350px;
       cursor: pointer; 
     }
     .time-display { 
@@ -80,12 +81,12 @@
       white-space: nowrap;
     }
 
-    /* Desktop: 3 colonne x 2 righe fisso */
+    /* Griglia 3 colonne x 2 righe su PC e Tablet */
     .grid { 
       display: grid; 
       grid-template-columns: repeat(3, 1fr); 
       grid-template-rows: repeat(2, 1fr);
-      gap: 6px; 
+      gap: 4px; 
       width: 100%; 
       flex: 1;
       min-height: 0;
@@ -112,7 +113,7 @@
     }
     
     .card { 
-      border: 2px solid #333; 
+      border: 2px solid #00ff88; 
       border-radius: 6px; 
       overflow: hidden; 
       background: #1e1e1e; 
@@ -123,7 +124,7 @@
       transition: border-color 0.2s ease;
       min-height: 0;
     }
-    .card.audio-on { border-color: #00ff88; }
+    .card.audio-off { border-color: #333; }
 
     .video-wrapper {
       flex: 1;
@@ -158,7 +159,7 @@
     }
 
     .card-footer {
-      padding: 3px;
+      padding: 2px;
       background: #1e1e1e;
       flex-shrink: 0;
     }
@@ -168,32 +169,33 @@
     .card-actions { display: flex; justify-content: center; gap: 4px; }
 
     .btn-single, .btn-focus {
-      background: #333; 
-      color: white; 
+      background: #00ff88; 
+      color: black; 
       border: 1px solid #555; 
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 3px; 
       cursor: pointer; 
       font-size: 9px; 
+      font-weight: bold;
       transition: 0.2s;
     }
-    .card.audio-on .btn-single { background: #00ff88; color: black; font-weight: bold; }
-    .btn-focus { background: #2563eb; font-weight: bold; }
+    .card.audio-off .btn-single { background: #333; color: white; font-weight: normal; }
+    .btn-focus { background: #2563eb; color: white; font-weight: bold; }
 
-    /* Layout Mobile & Tablet Verticale: 2 colonne x 3 righe compatto per stare in 1 schermata */
-    @media (max-width: 768px) {
-      h1 { font-size: 0.85rem; }
-      .controls-container { padding: 3px 6px; gap: 2px; }
-      .btn-control { padding: 3px 6px; font-size: 10px; }
+    /* Smartphone Mobile in verticale: adatta 3 colonne sottili per stare tutto in 1 schermata */
+    @media (max-width: 600px) {
+      h1 { font-size: 0.8rem; }
+      .controls-container { padding: 2px 4px; gap: 2px; }
+      .btn-control { padding: 2px 6px; font-size: 9px; }
       
       .grid { 
-        grid-template-columns: repeat(2, 1fr); 
-        grid-template-rows: repeat(3, 1fr);
-        gap: 4px; 
+        grid-template-columns: repeat(3, 1fr); 
+        grid-template-rows: repeat(2, 1fr);
+        gap: 3px; 
       }
 
-      p { font-size: 9px; margin: 0; }
-      .btn-single, .btn-focus { padding: 2px 4px; font-size: 8px; }
+      p { font-size: 8px; margin: 0; }
+      .btn-single, .btn-focus { padding: 1px 3px; font-size: 7.5px; }
     }
   </style>
 </head>
@@ -207,7 +209,7 @@
       <span id="timeDisplay" class="time-display">00:00 / 00:00</span>
     </div>
     <div>
-      <button id="btnGlobal" class="btn-control btn-global unmute-mode" onclick="handleGlobalClick()">🔊 Attiva Tutti gli Audio</button>
+      <button id="btnGlobal" class="btn-control btn-global mute-mode" onclick="handleGlobalClick()">🔇 Muta Tutti</button>
     </div>
   </div>
 
@@ -220,7 +222,7 @@
       <div class="card-footer">
         <p>Pilota 1</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(0, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -234,7 +236,7 @@
       <div class="card-footer">
         <p>Pilota 2</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(1, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -248,7 +250,7 @@
       <div class="card-footer">
         <p>Pilota 3</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(2, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -262,7 +264,7 @@
       <div class="card-footer">
         <p>Pilota 4</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(3, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -276,7 +278,7 @@
       <div class="card-footer">
         <p>Pilota 5</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(4, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -325,8 +327,7 @@
 
     function onPlayerReady(event, index) {
       const p = event.target;
-      p.mute(); // Assicura che i player partano muti in background
-      updateCardUI(index, true); // Sincronizza subito i pulsanti HTML su "Audio Off"
+      p.mute(); // Muto iniziale per far caricare il player al browser
       
       if (typeof p.getDuration === 'function') {
         const d = p.getDuration();
@@ -363,7 +364,9 @@
           if (isPlaying) {
             p.seekTo(refTime, true);
             const card = document.getElementById(`card-${idx}`);
-            if (card && card.classList.contains('audio-on')) {
+            
+            // Attiva l'audio se la card non è impostata su audio-off
+            if (card && !card.classList.contains('audio-off')) {
               p.unMute();
             } else {
               p.mute();
@@ -403,7 +406,11 @@
         featuredIndex = null;
         players.forEach((_, i) => updateCardUI(i, previousAudioStates[i]));
       } else {
-        previousAudioStates = players.map(p => p && p.isMuted ? p.isMuted() : true);
+        previousAudioStates = players.map(p => {
+          const c = document.getElementById(`card-${p}`);
+          return c ? c.classList.contains('audio-off') : false;
+        });
+
         players.forEach((_, i) => {
           const c = document.getElementById(`card-${i}`);
           if (c) {
@@ -429,11 +436,11 @@
 
       if (isMuted) {
         if (player && player.mute) player.mute();
-        card.classList.remove('audio-on');
+        card.classList.add('audio-off');
         if (button) button.innerText = '🔊 Audio Off';
       } else {
         if (player && player.unMute) player.unMute();
-        card.classList.add('audio-on');
+        card.classList.remove('audio-off');
         if (button) button.innerText = '🔊 Audio ON';
       }
     }
@@ -441,7 +448,7 @@
     function toggleAudio(index, event) {
       if (event && event.target.classList.contains('btn-focus')) return;
       const card = document.getElementById(`card-${index}`);
-      const isCurrentlyMuted = !card.classList.contains('audio-on');
+      const isCurrentlyMuted = card.classList.contains('audio-off');
       
       updateCardUI(index, !isCurrentlyMuted);
       updateGlobalButtonState();
@@ -451,7 +458,7 @@
       const btnGlobal = document.getElementById('btnGlobal');
       const hasAnyAudioActive = players.some((_, idx) => {
         const card = document.getElementById(`card-${idx}`);
-        return card && card.classList.contains('audio-on');
+        return card && !card.classList.contains('audio-off');
       });
 
       if (hasAnyAudioActive) {
@@ -466,7 +473,7 @@
     function handleGlobalClick() {
       const hasAnyAudioActive = players.some((_, idx) => {
         const card = document.getElementById(`card-${idx}`);
-        return card && card.classList.contains('audio-on');
+        return card && !card.classList.contains('audio-off');
       });
 
       const targetMuteState = hasAnyAudioActive;
