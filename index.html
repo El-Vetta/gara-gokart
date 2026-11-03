@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Gara Gokart - Interactive Multi-Cam</title>
+  <style>
+    html, body {
+      height: 100vh;
+      margin: 0;
+      padding: 10px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    body { 
+      background: #121212; 
+      color: white; 
+      font-family: sans-serif; 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .controls-container {
+      background: #1e1e1e; 
+      border: 1px solid #333; 
+      border-radius: 8px;
+      padding: 8px 12px; 
+      width: 100%; 
+      margin: 0 auto;
+      display: flex; 
+      flex-direction: column; 
+      gap: 6px; 
+      align-items: center;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .playback-controls { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: center; }
+    
+    .btn-control {
+      background: #2563eb; color: white; border: none; padding: 6px 14px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;
+    }
+    .btn-global.mute-mode { background: #dc2626; }
+    .btn-global.unmute-mode { background: #2563eb; }
+
+    .time-slider { width: 65%; cursor: pointer; }
+    .time-display { font-family: monospace; font-size: 13px; }
+
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px; 
+      width: 100%; 
+      flex: 1;
+      min-height: 0;
+    }
+
+    .grid.has-featured {
+      display: flex;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    .grid.has-featured .card:not(.featured) {
+      display: none !important;
+    }
+
+    .grid.has-featured .card.featured {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      border-color: #2563eb;
+      box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
+    }
+    
+    .card { 
+      border: 2px solid #333; border-radius: 8px; overflow: hidden; 
+      background: #1e1e1e; 
+      display: flex;
+      flex-direction: column;
+      cursor: pointer; user-select: none;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+      min-height: 0;
+    }
+    .card.audio-on { border-color: #00ff88; }
+
+    .video-wrapper {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    .card-footer {
+      padding: 4px;
+      background: #1e1e1e;
+      flex-shrink: 0;
+    }
+
+    p { margin: 2px 0 4px 0; font-size: 12px; font-weight: bold; }
+    
+    .card-actions { display: flex; justify-content: center; gap: 6px; }
+
+    .btn-single, .btn-focus {
+      background: #333; color: white; border: 1px solid #555; padding: 4px 8px;
+      border-radius: 4px; cursor: pointer; font-size: 11px; transition: 0.2s;
+    }
+    .card.audio-on .btn-single { background: #00ff88; color: black; font-weight: bold; }
+    .btn-focus { background: #2563eb; font-weight: bold; }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 1rem; }
+      .controls-container { padding: 6px; }
+      .btn-control { padding: 4px 8px; font-size: 11px; }
+      .time-display { font-size: 10px; }
+      .grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        grid-template-rows: repeat(3, 1fr);
+        gap: 6px; 
+      }
+      p { font-size: 10px; }
+      .btn-single, .btn-focus { padding: 2px 6px; font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Gara Gokart Udine - Interactive Multi-Cam</h1>
+  
+  <div class="controls-container">
+    <div class="playback-controls">
+      <button id="btnPlayPause" class="btn-control" onclick="togglePlayPause()">▶️ Play</button>
+      <input type="range" id="seekBar" class="time-slider" value="0" min="0" max="100" step="0.1" oninput="seekAll(this.value)">
+      <span id="timeDisplay" class="time-display">00:00 / 00:00</span>
+    </div>
+    <div>
+      <button id="btnGlobal" class="btn-control btn-global unmute-mode" onclick="handleGlobalClick()">🔊 Attiva Tutti gli Audio</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card" id="card-0" onclick="toggleAudio(0, event)">
+      <div class="video-wrapper">
+        <div id="v0"></div>
+      </div>
+      <div class="card-footer">
+        <p>Pilota 1</p>
+        <div class="card-actions">
+          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-focus" onclick="toggleFocus(0, event)">🔍 Ingrandisci</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-1" onclick="toggleAudio(1, event)">
+      <div class="video-wrapper">
+        <div id="v1"></div>
+      </div>
+      <div class="card-footer">
+        <p>Pilota 2</p>
+        <div class="card-actions">
+          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-focus" onclick="toggleFocus(1, event)">🔍 Ingrandisci</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-2" onclick="toggleAudio(2, event)">
+      <div class="video-wrapper">
+        <div id="v2"></div>
+      </div>
+      <div class="card-footer">
+        <p>Pilota 3</p>
+        <div class="card-actions">
+          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-focus" onclick="toggleFocus(2, event)">🔍 Ingrandisci</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-3" onclick="toggleAudio(3, event)">
+      <div class="video-wrapper">
+        <div id="v3"></div>
+      </div>
+      <div class="card-footer">
+        <p>Pilota 4</p>
+        <div class="card-actions">
+          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-focus" onclick="toggleFocus(3, event)">🔍 Ingrandisci</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-4" onclick="toggleAudio(4, event)">
+      <div class="video-wrapper">
+        <div id="v4"></div>
+      </div>
+      <div class="card-footer">
+        <p>Pilota 5</p>
+        <div class="card-actions">
+          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-focus" onclick="toggleFocus(4, event)">🔍 Ingrandisci</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    const youtubeIDs = [
+      'ctNbkpWVy4g',
+      '', // ID del Pilota 2 appena disponibile
+      'FNPA_kQMaD0',
+      '6SaxWshz-Hg',
+      '8eQmVKUpvYU'
+    ];
+
+    let players = [];
+    let isPlaying = false;
+    let maxDuration = 0;
+    let featuredIndex = null;
+    let previousAudioStates = [];
+    const grid = document.querySelector('.grid');
+    const seekBar = document.getElementById('seekBar');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+
+    function onYouTubeIframeAPIReady() {
+      for (let i = 0; i < 5; i++) {
+        if (!youtubeIDs[i]) continue;
+
+        players[i] = new YT.Player(`v${i}`, {
+          videoId: youtubeIDs[i],
+          playerVars: {
+            'controls': 0,
+            'rel': 0,
+            'modestbranding': 1,
+            'playsinline': 1,
+            'enablejsapi': 1
+          },
+          events: { 
+            'onReady': (event) => onPlayerReady(event, i)
+          }
+        });
+      }
+    }
+
+    function onPlayerReady(event, index) {
+      const p = event.target;
+      p.mute(); // Assicura che sia muto per superare l'Autoplay policy
+
+      // Micro-play per caricare il primo frame (anteprima) poi pausa e ripristino a 0
+      p.playVideo();
+      setTimeout(() => {
+        p.pauseVideo();
+        p.seekTo(0, true);
+        
+        if (typeof p.getDuration === 'function') {
+          const d = p.getDuration();
+          if (d > maxDuration) maxDuration = d;
+        }
+      }, 300);
+    }
+
+    setInterval(() => {
+      const activePlayer = players.find(p => p && typeof p.getCurrentTime === 'function');
+      if (maxDuration > 0 && activePlayer) {
+        const currentTime = activePlayer.getCurrentTime() || 0;
+        const progress = (currentTime / maxDuration) * 100;
+        seekBar.value = progress;
+        timeDisplay.innerText = `${formatTime(currentTime)} / ${formatTime(maxDuration)}`;
+      }
+    }, 100);
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+
+      const activePlayer = players.find(p => p && typeof p.getCurrentTime === 'function');
+      const refTime = activePlayer ? activePlayer.getCurrentTime() : 0;
+
+      players.forEach(p => {
+        if (p && p.playVideo) {
+          if (isPlaying) {
+            p.seekTo(refTime, true);
+            p.playVideo();
+          } else {
+            p.pauseVideo();
+          }
+        }
+      });
+      btnPlayPause.innerText = isPlaying ? '⏸️ Pausa' : '▶️ Play';
+    }
+
+    function seekAll(percent) {
+      if (!maxDuration) return;
+      const targetTime = (percent / 100) * maxDuration;
+      players.forEach(p => {
+        if (p && p.seekTo) p.seekTo(targetTime, true);
+      });
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function toggleFocus(index, event) {
+      if (event) event.stopPropagation();
+      const card = document.getElementById(`card-${index}`);
+      const btnFocus = card.querySelector('.btn-focus');
+
+      if (featuredIndex === index) {
+        card.classList.remove('featured');
+        grid.classList.remove('has-featured');
+        btnFocus.innerText = '🔍 Ingrandisci';
+        featuredIndex = null;
+        players.forEach((_, i) => updateCardUI(i, previousAudioStates[i]));
+      } else {
+        previousAudioStates = players.map(p => p && p.isMuted ? p.isMuted() : true);
+        players.forEach((_, i) => {
+          const c = document.getElementById(`card-${i}`);
+          if (c) {
+            c.classList.remove('featured');
+            c.querySelector('.btn-focus').innerText = '🔍 Ingrandisci';
+          }
+        });
+
+        card.classList.add('featured');
+        grid.classList.add('has-featured');
+        btnFocus.innerText = '🔙 Riduci';
+        featuredIndex = index;
+        players.forEach((_, i) => updateCardUI(i, i !== index));
+      }
+      updateGlobalButtonState();
+    }
+
+    function updateCardUI(index, isMuted) {
+      const player = players[index];
+      const card = document.getElementById(`card-${index}`);
+      if (!card) return;
+      const button = card.querySelector('.btn-single');
+
+      if (player && player.mute) {
+        if (isMuted) {
+          player.mute();
+          card.classList.remove('audio-on');
+          if (button) button.innerText = '🔊 Audio Off';
+        } else {
+          player.unMute();
+          card.classList.add('audio-on');
+          if (button) button.innerText = '🔊 Audio ON';
+        }
+      }
+    }
+
+    function toggleAudio(index, event) {
+      if (event && event.target.classList.contains('btn-focus')) return;
+      const player = players[index];
+      if (player && player.isMuted) {
+        updateCardUI(index, !player.isMuted());
+        updateGlobalButtonState();
+      }
+    }
+
+    function updateGlobalButtonState() {
+      const btnGlobal = document.getElementById('btnGlobal');
+      const hasAnyAudioActive = players.some(p => p && p.isMuted && !p.isMuted());
+
+      if (hasAnyAudioActive) {
+        btnGlobal.innerText = '🔇 Muta Tutti';
+        btnGlobal.className = 'btn-control btn-global mute-mode';
+      } else {
+        btnGlobal.innerText = '🔊 Attiva Tutti gli Audio';
+        btnGlobal.className = 'btn-control btn-global unmute-mode';
+      }
+    }
+
+    function handleGlobalClick() {
+      const hasAnyAudioActive = players.some(p => p && p.isMuted && !p.isMuted());
+      const targetMuteState = hasAnyAudioActive;
+      for (let i = 0; i < 5; i++) {
+        updateCardUI(i, targetMuteState);
+      }
+      updateGlobalButtonState();
+    }
+  </script>
+</body>
+</html>
