@@ -2,7 +2,6 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <!-- Tag Viewport indispensabile per far capire al browser mobile la larghezza dello schermo -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Gara Gokart - Interactive Multi-Cam</title>
   <style>
@@ -11,25 +10,26 @@
     }
 
     html, body {
-      min-height: 100vh;
+      height: 100vh;
+      width: 100vw;
       margin: 0;
       padding: 8px;
       background: #121212; 
       color: white; 
       font-family: sans-serif; 
       text-align: center; 
+      overflow: hidden; /* Blocca definitivamente lo scroll sia su PC che su Mobile */
     }
 
     body {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      overflow-y: auto; /* Abilita lo scroll fluido su dispositivi mobili */
+      gap: 6px;
     }
     
     h1 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       flex-shrink: 0;
     }
 
@@ -37,18 +37,14 @@
       background: #1e1e1e; 
       border: 1px solid #333; 
       border-radius: 8px;
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       width: 100%; 
       margin: 0 auto;
       display: flex; 
       flex-direction: column; 
-      gap: 8px; 
+      gap: 6px; 
       align-items: center;
       flex-shrink: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100; /* Mantiene la barra di controllo sempre in alto durante lo scroll */
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
     .playback-controls { 
@@ -63,10 +59,10 @@
       background: #2563eb; 
       color: white; 
       border: none; 
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 6px; 
       cursor: pointer; 
-      font-size: 13px; 
+      font-size: 12px; 
       font-weight: bold;
       flex-shrink: 0;
     }
@@ -75,32 +71,41 @@
 
     .time-slider { 
       flex: 1; 
-      max-width: 500px;
+      max-width: 400px;
       cursor: pointer; 
     }
     .time-display { 
       font-family: monospace; 
-      font-size: 12px; 
+      font-size: 11px; 
       white-space: nowrap;
     }
 
-    /* Layout Griglia Desktop */
+    /* Layout Griglia Desktop: 3 colonne x 2 righe */
     .grid { 
       display: grid; 
       grid-template-columns: repeat(3, 1fr); 
-      gap: 10px; 
+      grid-template-rows: repeat(2, 1fr);
+      gap: 8px; 
       width: 100%; 
       flex: 1;
+      min-height: 0;
     }
 
     /* Modalità ingrandita */
+    .grid.has-featured {
+      display: flex;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
     .grid.has-featured .card:not(.featured) {
       display: none !important;
     }
 
     .grid.has-featured .card.featured {
-      grid-column: 1 / -1;
       width: 100%;
+      height: 100%;
       margin: 0;
       border-color: #2563eb;
       box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
@@ -116,15 +121,16 @@
       cursor: pointer; 
       user-select: none;
       transition: all 0.3s ease;
+      min-height: 0;
     }
     .card.audio-on { border-color: #00ff88; }
 
-    /* Mantiene il rapporto di forma standard 16:9 per i video */
     .video-wrapper {
+      flex: 1;
       width: 100%;
-      position: relative;
-      padding-top: 56.25%; /* Ratio 16:9 */
+      min-height: 0;
       background: #000;
+      position: relative;
     }
 
     iframe {
@@ -138,49 +144,43 @@
     }
 
     .card-footer {
-      padding: 6px;
+      padding: 4px;
       background: #1e1e1e;
       flex-shrink: 0;
     }
 
-    p { margin: 2px 0 6px 0; font-size: 13px; font-weight: bold; }
+    p { margin: 1px 0 3px 0; font-size: 11px; font-weight: bold; }
     
-    .card-actions { display: flex; justify-content: center; gap: 8px; }
+    .card-actions { display: flex; justify-content: center; gap: 6px; }
 
     .btn-single, .btn-focus {
       background: #333; 
       color: white; 
       border: 1px solid #555; 
-      padding: 5px 10px;
+      padding: 3px 6px;
       border-radius: 4px; 
       cursor: pointer; 
-      font-size: 12px; 
+      font-size: 10px; 
       transition: 0.2s;
     }
     .card.audio-on .btn-single { background: #00ff88; color: black; font-weight: bold; }
     .btn-focus { background: #2563eb; font-weight: bold; }
 
-    /* Layout Tablet (sotto i 1024px) */
-    @media (max-width: 1024px) {
-      .grid { 
-        grid-template-columns: repeat(2, 1fr); 
-      }
-    }
-
-    /* Layout Mobile Smartphone (sotto i 600px) */
+    /* Layout Mobile Smartphone: 2 colonne x 3 righe per vedere tutti i video senza scroll */
     @media (max-width: 600px) {
-      h1 { font-size: 1.1rem; }
-      .controls-container { padding: 6px 8px; }
-      .btn-control { padding: 6px 10px; font-size: 11px; }
-      .time-display { font-size: 10px; }
+      h1 { font-size: 0.95rem; }
+      .controls-container { padding: 4px 6px; }
+      .btn-control { padding: 4px 8px; font-size: 10px; }
+      .time-display { font-size: 9px; }
       
       .grid { 
-        grid-template-columns: 1fr; /* 1 video per riga su mobile per una visione ottimale */
-        gap: 12px; 
+        grid-template-columns: repeat(2, 1fr); 
+        grid-template-rows: repeat(3, 1fr);
+        gap: 6px; 
       }
 
-      p { font-size: 12px; }
-      .btn-single, .btn-focus { padding: 4px 8px; font-size: 11px; }
+      p { font-size: 10px; margin: 1px 0; }
+      .btn-single, .btn-focus { padding: 2px 4px; font-size: 9px; }
     }
   </style>
 </head>
@@ -194,71 +194,71 @@
       <span id="timeDisplay" class="time-display">00:00 / 00:00</span>
     </div>
     <div>
-      <button id="btnGlobal" class="btn-control btn-global unmute-mode" onclick="handleGlobalClick()">🔊 Attiva Tutti gli Audio</button>
+      <button id="btnGlobal" class="btn-control btn-global mute-mode" onclick="handleGlobalClick()">🔇 Muta Tutti</button>
     </div>
   </div>
 
   <div class="grid">
-    <div class="card" id="card-0" onclick="toggleAudio(0, event)">
+    <div class="card audio-on" id="card-0" onclick="toggleAudio(0, event)">
       <div class="video-wrapper">
         <div id="v0"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 1</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(0, event)">🔍 Ingrandisci</button>
         </div>
       </div>
     </div>
 
-    <div class="card" id="card-1" onclick="toggleAudio(1, event)">
+    <div class="card audio-on" id="card-1" onclick="toggleAudio(1, event)">
       <div class="video-wrapper">
         <div id="v1"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 2</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(1, event)">🔍 Ingrandisci</button>
         </div>
       </div>
     </div>
 
-    <div class="card" id="card-2" onclick="toggleAudio(2, event)">
+    <div class="card audio-on" id="card-2" onclick="toggleAudio(2, event)">
       <div class="video-wrapper">
         <div id="v2"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 3</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(2, event)">🔍 Ingrandisci</button>
         </div>
       </div>
     </div>
 
-    <div class="card" id="card-3" onclick="toggleAudio(3, event)">
+    <div class="card audio-on" id="card-3" onclick="toggleAudio(3, event)">
       <div class="video-wrapper">
         <div id="v3"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 4</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(3, event)">🔍 Ingrandisci</button>
         </div>
       </div>
     </div>
 
-    <div class="card" id="card-4" onclick="toggleAudio(4, event)">
+    <div class="card audio-on" id="card-4" onclick="toggleAudio(4, event)">
       <div class="video-wrapper">
         <div id="v4"></div>
       </div>
       <div class="card-footer">
         <p>Pilota 5</p>
         <div class="card-actions">
-          <button class="btn-single">🔊 Audio Off</button>
+          <button class="btn-single">🔊 Audio ON</button>
           <button class="btn-focus" onclick="toggleFocus(4, event)">🔍 Ingrandisci</button>
         </div>
       </div>
@@ -307,7 +307,7 @@
 
     function onPlayerReady(event, index) {
       const p = event.target;
-      p.mute();
+      p.mute(); // Muto iniziale obbligatorio per l'Autoplay Policy dei browser
 
       p.playVideo();
       setTimeout(() => {
@@ -337,10 +337,16 @@
       const activePlayer = players.find(p => p && typeof p.getCurrentTime === 'function');
       const refTime = activePlayer ? activePlayer.getCurrentTime() : 0;
 
-      players.forEach(p => {
+      players.forEach((p, idx) => {
         if (p && p.playVideo) {
           if (isPlaying) {
             p.seekTo(refTime, true);
+            
+            // Se la card ha l'audio attivo (classe audio-on), riattiva l'audio dell'utente al click
+            const card = document.getElementById(`card-${idx}`);
+            if (card && card.classList.contains('audio-on')) {
+              p.unMute();
+            }
             p.playVideo();
           } else {
             p.pauseVideo();
@@ -376,7 +382,7 @@
         featuredIndex = null;
         players.forEach((_, i) => updateCardUI(i, previousAudioStates[i]));
       } else {
-        previousAudioStates = players.map(p => p && p.isMuted ? p.isMuted() : true);
+        previousAudioStates = players.map(p => p && p.isMuted ? p.isMuted() : false);
         players.forEach((_, i) => {
           const c = document.getElementById(`card-${i}`);
           if (c) {
