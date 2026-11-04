@@ -1,291 +1,4 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gara Gokart - Interactive Multi-Cam</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100vh;
-      height: 100dvh; /* Considera le barre dinamiche del browser su mobile */
-      width: 100vw;
-      margin: 0;
-      padding: 4px;
-      background: #121212; 
-      color: white; 
-      font-family: sans-serif; 
-      text-align: center; 
-      overflow: hidden !important; /* Blocca tassativamente lo scroll */
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    
-    h1 {
-      margin: 0;
-      font-size: 0.95rem;
-      flex-shrink: 0;
-    }
-
-    .controls-container {
-      background: #1e1e1e; 
-      border: 1px solid #333; 
-      border-radius: 6px;
-      padding: 3px 6px; 
-      width: 100%; 
-      margin: 0 auto;
-      display: flex; 
-      flex-direction: column; 
-      gap: 3px; 
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .playback-controls { 
-      display: flex; 
-      align-items: center; 
-      gap: 6px; 
-      width: 100%; 
-      justify-content: center; 
-    }
-    
-    .btn-control {
-      background: #2563eb; 
-      color: white; 
-      border: none; 
-      padding: 4px 8px;
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-size: 11px; 
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    .btn-global.mute-mode { background: #dc2626; }
-    .btn-global.unmute-mode { background: #2563eb; }
-
-    .time-slider { 
-      flex: 1; 
-      max-width: 350px;
-      cursor: pointer; 
-    }
-    .time-display { 
-      font-family: monospace; 
-      font-size: 10px; 
-      white-space: nowrap;
-    }
-
-    /* Griglia 3 colonne x 2 righe su PC e Tablet */
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(3, 1fr); 
-      grid-template-rows: repeat(2, 1fr);
-      gap: 4px; 
-      width: 100%; 
-      flex: 1;
-      min-height: 0;
-    }
-
-    /* Modalità Ingrandito */
-    .grid.has-featured {
-      display: flex;
-      flex: 1;
-      width: 100%;
-      height: 100%;
-    }
-
-    .grid.has-featured .card:not(.featured) {
-      display: none !important;
-    }
-
-    .grid.has-featured .card.featured {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      border-color: #2563eb;
-      box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
-    }
-    
-    .card { 
-      border: 2px solid #00ff88; 
-      border-radius: 6px; 
-      overflow: hidden; 
-      background: #1e1e1e; 
-      display: flex;
-      flex-direction: column;
-      cursor: pointer; 
-      user-select: none;
-      transition: border-color 0.2s ease;
-      min-height: 0;
-    }
-    .card.audio-off { border-color: #333; }
-
-    .video-wrapper {
-      flex: 1;
-      width: 100%;
-      min-height: 0;
-      background: #000;
-      position: relative;
-    }
-
-    iframe, .poster-img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      object-fit: cover;
-    }
-
-    iframe {
-      pointer-events: none;
-    }
-
-    .poster-img {
-      z-index: 2;
-      transition: opacity 0.3s ease;
-    }
-
-    .poster-img.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .card-footer {
-      padding: 2px;
-      background: #1e1e1e;
-      flex-shrink: 0;
-    }
-
-    p { margin: 0 0 2px 0; font-size: 10px; font-weight: bold; }
-    
-    .card-actions { display: flex; justify-content: center; gap: 4px; }
-
-    .btn-single, .btn-focus {
-      background: #00ff88; 
-      color: black; 
-      border: 1px solid #555; 
-      padding: 2px 5px;
-      border-radius: 3px; 
-      cursor: pointer; 
-      font-size: 9px; 
-      font-weight: bold;
-      transition: 0.2s;
-    }
-    .card.audio-off .btn-single { background: #333; color: white; font-weight: normal; }
-    .btn-focus { background: #2563eb; color: white; font-weight: bold; }
-
-    /* Smartphone Mobile in verticale: adatta 3 colonne sottili per stare tutto in 1 schermata */
-    @media (max-width: 600px) {
-      h1 { font-size: 0.8rem; }
-      .controls-container { padding: 2px 4px; gap: 2px; }
-      .btn-control { padding: 2px 6px; font-size: 9px; }
-      
-      .grid { 
-        grid-template-columns: repeat(3, 1fr); 
-        grid-template-rows: repeat(2, 1fr);
-        gap: 3px; 
-      }
-
-      p { font-size: 8px; margin: 0; }
-      .btn-single, .btn-focus { padding: 1px 3px; font-size: 7.5px; }
-    }
-  </style>
-</head>
-<body>
-  <h1>Gara Gokart Udine - Interactive Multi-Cam</h1>
-  
-  <div class="controls-container">
-    <div class="playback-controls">
-      <button id="btnPlayPause" class="btn-control" onclick="togglePlayPause()">▶️ Play</button>
-      <input type="range" id="seekBar" class="time-slider" value="0" min="0" max="100" step="0.1" oninput="seekAll(this.value)">
-      <span id="timeDisplay" class="time-display">00:00 / 00:00</span>
-    </div>
-    <div>
-      <button id="btnGlobal" class="btn-control btn-global mute-mode" onclick="handleGlobalClick()">🔇 Muta Tutti</button>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="card" id="card-0" onclick="toggleAudio(0, event)">
-      <div class="video-wrapper">
-        <img id="poster-0" class="poster-img" src="https://img.youtube.com/vi/ctNbkpWVy4g/hqdefault.jpg" alt="Preview Pilota 1">
-        <div id="v0"></div>
-      </div>
-      <div class="card-footer">
-        <p>Pilota 1</p>
-        <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
-          <button class="btn-focus" onclick="toggleFocus(0, event)">🔍 Ingrandisci</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="card-1" onclick="toggleAudio(1, event)">
-      <div class="video-wrapper">
-        <img id="poster-1" class="poster-img hidden" src="" alt="Preview Pilota 2">
-        <div id="v1"></div>
-      </div>
-      <div class="card-footer">
-        <p>Pilota 2</p>
-        <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
-          <button class="btn-focus" onclick="toggleFocus(1, event)">🔍 Ingrandisci</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="card-2" onclick="toggleAudio(2, event)">
-      <div class="video-wrapper">
-        <img id="poster-2" class="poster-img" src="https://img.youtube.com/vi/FNPA_kQMaD0/hqdefault.jpg" alt="Preview Pilota 3">
-        <div id="v2"></div>
-      </div>
-      <div class="card-footer">
-        <p>Pilota 3</p>
-        <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
-          <button class="btn-focus" onclick="toggleFocus(2, event)">🔍 Ingrandisci</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="card-3" onclick="toggleAudio(3, event)">
-      <div class="video-wrapper">
-        <img id="poster-3" class="poster-img" src="https://img.youtube.com/vi/6SaxWshz-Hg/hqdefault.jpg" alt="Preview Pilota 4">
-        <div id="v3"></div>
-      </div>
-      <div class="card-footer">
-        <p>Pilota 4</p>
-        <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
-          <button class="btn-focus" onclick="toggleFocus(3, event)">🔍 Ingrandisci</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="card-4" onclick="toggleAudio(4, event)">
-      <div class="video-wrapper">
-        <img id="poster-4" class="poster-img" src="https://img.youtube.com/vi/8eQmVKUpvYU/hqdefault.jpg" alt="Preview Pilota 5">
-        <div id="v4"></div>
-      </div>
-      <div class="card-footer">
-        <p>Pilota 5</p>
-        <div class="card-actions">
-          <button class="btn-single">🔊 Audio ON</button>
-          <button class="btn-focus" onclick="toggleFocus(4, event)">🔍 Ingrandisci</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
   <script>
     const youtubeIDs = [
       'ctNbkpWVy4g',
@@ -319,7 +32,8 @@
             'enablejsapi': 1
           },
           events: { 
-            'onReady': (event) => onPlayerReady(event, i)
+            'onReady': (event) => onPlayerReady(event, i),
+            'onStateChange': (event) => onPlayerStateChange(event, i)
           }
         });
       }
@@ -327,11 +41,21 @@
 
     function onPlayerReady(event, index) {
       const p = event.target;
-      p.mute(); // Muto iniziale per far caricare il player al browser
+      p.mute();
       
       if (typeof p.getDuration === 'function') {
         const d = p.getDuration();
         if (d > maxDuration) maxDuration = d;
+      }
+    }
+
+    // Gestisce la fine dei singoli video per evitare il riavvio in loop
+    function onPlayerStateChange(event, index) {
+      if (event.data === YT.PlayerState.ENDED) {
+        const p = players[index];
+        if (p && p.pauseVideo) {
+          p.pauseVideo();
+        }
       }
     }
 
@@ -361,17 +85,22 @@
 
       players.forEach((p, idx) => {
         if (p && p.playVideo) {
+          const videoDuration = typeof p.getDuration === 'function' ? p.getDuration() : maxDuration;
+          
           if (isPlaying) {
-            p.seekTo(refTime, true);
-            const card = document.getElementById(`card-${idx}`);
-            
-            // Attiva l'audio se la card non è impostata su audio-off
-            if (card && !card.classList.contains('audio-off')) {
-              p.unMute();
+            // Fai partire il video solo se il tempo corrente non supera la sua durata
+            if (refTime < videoDuration) {
+              p.seekTo(refTime, true);
+              const card = document.getElementById(`card-${idx}`);
+              if (card && !card.classList.contains('audio-off')) {
+                p.unMute();
+              } else {
+                p.mute();
+              }
+              p.playVideo();
             } else {
-              p.mute();
+              p.pauseVideo();
             }
-            p.playVideo();
           } else {
             p.pauseVideo();
           }
@@ -380,11 +109,24 @@
       btnPlayPause.innerText = isPlaying ? '⏸️ Pausa' : '▶️ Play';
     }
 
+    // Gestione dello scrubber sincronizzato con la durata singola di ogni traccia
     function seekAll(percent) {
       if (!maxDuration) return;
       const targetTime = (percent / 100) * maxDuration;
+
       players.forEach(p => {
-        if (p && p.seekTo) p.seekTo(targetTime, true);
+        if (p && p.seekTo) {
+          const videoDuration = typeof p.getDuration === 'function' ? p.getDuration() : maxDuration;
+          
+          if (targetTime < videoDuration) {
+            p.seekTo(targetTime, true);
+            if (isPlaying) p.playVideo();
+          } else {
+            // Se il target supera la durata del video, lo porta alla fine e lo mette in pausa
+            p.seekTo(videoDuration - 0.1, true);
+            p.pauseVideo();
+          }
+        }
       });
     }
 
@@ -483,5 +225,3 @@
       updateGlobalButtonState();
     }
   </script>
-</body>
-</html>
