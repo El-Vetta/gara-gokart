@@ -300,6 +300,8 @@
     let maxDuration = 0;
     let featuredIndex = null;
     let previousAudioStates = [];
+    let seekTimeout = null;
+
     const grid = document.querySelector('.grid');
     const seekBar = document.getElementById('seekBar');
     const timeDisplay = document.getElementById('timeDisplay');
@@ -397,25 +399,43 @@
       btnPlayPause.innerText = isPlaying ? '⏸️ Pausa' : '▶️ Play';
     }
 
-    // Gestione dello scrubber sincronizzato con la durata singola di ogni traccia
+    // Gestione dello scrubber con micro-pausa per sincronizzare il buffer
     function seekAll(percent) {
       if (!maxDuration) return;
       const targetTime = (percent / 100) * maxDuration;
 
+      // 1. Mette in pausa temporanea i flussi
+      players.forEach(p => {
+        if (p && p.pauseVideo) p.pauseVideo();
+      });
+
+      // 2. Posiziona il seeker
       players.forEach(p => {
         if (p && p.seekTo) {
           const videoDuration = typeof p.getDuration === 'function' ? p.getDuration() : maxDuration;
 
           if (targetTime < videoDuration) {
             p.seekTo(targetTime, true);
-            if (isPlaying) p.playVideo();
           } else {
-            // Se il target supera la durata del video, lo porta alla fine e lo mette in pausa
             p.seekTo(videoDuration - 0.1, true);
-            p.pauseVideo();
           }
         }
       });
+
+      // 3. Riparte sincronizzato dopo 300ms di pre-caricamento
+      clearTimeout(seekTimeout);
+      seekTimeout = setTimeout(() => {
+        if (isPlaying) {
+          players.forEach(p => {
+            if (p && p.playVideo) {
+              const videoDuration = typeof p.getDuration === 'function' ? p.getDuration() : maxDuration;
+              if (targetTime < videoDuration) {
+                p.playVideo();
+              }
+            }
+          });
+        }
+      }, 300);
     }
 
     function formatTime(seconds) {
